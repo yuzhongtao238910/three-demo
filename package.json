@@ -1,0 +1,20 @@
+{
+  "name": "three-html",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "three": "^0.167.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.1"
+  }
+}
