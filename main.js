@@ -1,80 +1,38 @@
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import * as THREE from 'three';
-import Stats from "three/examples/jsm/libs/stats.module.js"
-import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { scene } from "./utils/init"
 
-
-
-let scene, camera, render, axesHelper, controls, cube, stats, group;
-let labelRenderer; // 文字渲染器
-group = new THREE.Group();
+import * as THREE from "three"
 /*
-  threejs 鼠标事件
-  1- 原生的dom事件：支持原生事件 需要pointerEvent = "all" 再将鼠标的交互事件打开
-  2- threejs创建的物体使用光射投影
-    核心：鼠标位置归一化为设备坐标，配合摄像机计算鼠标移过哪些物体
+贴图的黑色部分：完全透明的
+贴图的白色部分：完全不透明的
+https://xuexi.boxuegu.com/lesson/?id=3990
 */
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-  render = new THREE.WebGLRenderer({
-    antialias: true
-  });
-  render.setSize( window.innerWidth, window.innerHeight );
-  document.body.appendChild( render.domElement );
-  axesHelper = new THREE.AxesHelper( 5 ); 
-  scene.add( axesHelper );
+function initBase() {
+  // 1- 创建几何图形
+  const geometry = new THREE.SphereGeometry( 1, 32, 16 );
+  // 2- 定义纹理对象（图片）
+  const textureLoader = new THREE.TextureLoader()
+  const texture = textureLoader.load("/texture/one/basecolor.jpg")
+  // 3- 透明度贴图
+  const alphaTexture = textureLoader.load("/texture/one/opacity.jpg")
+  const aoMapTexture = textureLoader.load("/texture/one/ambientOcclusion.jpg")
+  // const alphaTexture = textureLoader.load("/test.jpg")
+  texture.colorSpace = THREE.SRGBColorSpace
+  aoMapTexture.colorSpace = THREE.SRGBColorSpace
+  alphaTexture.colorSpace = THREE.SRGBColorSpace
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    // 黑的更加黑  亮的更加亮
+    aoMap: aoMapTexture
+    // aoMap: 该纹理的红色通道用作环境遮挡贴图。默认值为null。aoMap需要第二组UV。
+    // alphaMap: alphaTexture, // 部分透明
+    // transparent: true,
+    // opacity: 0.8 // 这个是全透明
+  })
+  const mesh = new THREE.Mesh( geometry, material );
+  // 扩展：给目标物体设置第二组uv坐标 影响贴图像素点转换对应的映射过程
+  // 当aoMap直接没有效果的时候，设置第二组的uv坐标来影响贴图过来的明暗效果
+  mesh.geometry.setAttribute("uv2", new THREE.BufferAttribute(mesh.geometry.attributes.uv.array, 2))
+  scene.add( mesh );
+  console.log(mesh)
 }
-function createBox() {
-  const tag = document.createElement("span")
-  tag.innerHTML = "我的文字"
-  // 原生标签之中的px的值会平移到3d空间的
-  tag.style.color = "white"
-  const tag3D = new CSS3DObject(tag)
-  scene.add(tag3D)
-  tag3D.scale.set(1 / 16, 1/ 16, 1/ 16)
-  labelRenderer = new CSS3DRenderer()
-  labelRenderer.setSize(window.innerWidth, window.innerHeight)
-  // 阻止标签触发鼠标交互事件
-  labelRenderer.domElement.style.pointerEvents = "none"
-  labelRenderer.domElement.style.position = "fixed"
-  labelRenderer.domElement.style.left = "0"
-  labelRenderer.domElement.style.top = "0"
-  camera.position.z = 10
-  document.body.appendChild(labelRenderer.domElement)
-  labelRenderer.render(scene, camera)
-}
-function animate() {
-  render.render( scene, camera );
-  labelRenderer.render(scene, camera)
-  stats.update()
-  controls.update();
-  requestAnimationFrame( animate );
-}
-function createControl() {
-  controls = new OrbitControls( camera, render.domElement );
-  controls.autoRotate = true
-  controls.enableDamping = true
-}
-function createsStats() {
-  // 创建性能监视器
-  stats = new Stats()
-  // 设置监视器面板类型，0 fps每秒传输帧数 1 ms每帧刷新用时 2mb内存占用
-  stats.setMode(0)
-  stats.domElement.style.position = "fixed"
-  stats.domElement.style.left = '0'
-  stats.domElement.style.top = '0'
-  document.body.appendChild(stats.domElement)
-}
-
-init()
-createBox()
-createControl()
-createsStats() // 性能监视器
-animate();
-
-window.onresize = () => {
-  render.setSize( window.innerWidth, window.innerHeight );
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-}
+initBase()
